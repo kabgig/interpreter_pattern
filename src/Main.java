@@ -1,36 +1,49 @@
-class StrategyRunner {
+class TemplateMethodeRunner {
     public static void main(String[] args) {
-        Context context = new Context();
-
-        context.setStrategy(new FirstStrategy());//назначаем контексту конкретную стратегию
-        context.executeStrategy("Запускаем стратегию");// запускам стратегию
-
-        context.setStrategy(new SecondStrategy());//назначаем контексту другую конкретную стратегию
-        context.executeStrategy("Запускаем стратегию");// запускам стратегию
+        DocWork docWork = new CSV();// Переменную docWork назначаем объектом CSV
+        docWork.handleDoc();// Вызываем  шаблонный метод
+        System.out.println("\n=============================\n");
+        docWork = new PDF();// Переменную docWork назначаем объектом PDF
+        docWork.handleDoc();// Вызываем  шаблонный метод
     }
 }
 
-interface Strategy{
-    void run(String string);// определяем метод, который будет вызывать конкретный алгоритм (стратегию)
+abstract class DocWork {
+
+    public void handleDoc() {
+        loadDoc();
+        rework();
+        exit();
+    }
+
+    void loadDoc() {
+        System.out.println("Document Loading");
+    }
+
+    abstract void rework();
+    abstract void exit();
 }
-class FirstStrategy implements Strategy{
+
+class PDF extends DocWork {
     @Override
-    public void run(String string) {
-        System.out.println("Первый вариант решения "+ string);
+    protected void rework() {
+        System.out.println("Обработка PDF");
     }
-}
-class SecondStrategy implements Strategy{
+
     @Override
-    public void run(String string) {
-        System.out.println("Второй вариант решения "+ string);
+    protected void exit() {
+        System.out.println("Конец PDF");
     }
 }
-class Context{
-    private Strategy strategy; // ссылка на общий интерфейс
-    void setStrategy(Strategy strategy){
-        this.strategy=strategy;// сеттер стратегии
+
+class CSV extends DocWork {
+    @Override
+    protected void rework() {
+        System.out.println("Обработка CSV");
     }
-    void executeStrategy(String string){
-        strategy.run(string);// вызываем стратегию
+
+    @Override
+    protected void exit() {
+        System.out.println("Конец CSV");
     }
 }

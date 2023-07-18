@@ -1,65 +1,82 @@
-class MainMediator {
+import java.util.Date;
+
+class Memento {
     public static void main(String[] args) {
-        Admin admin = new Admin();// создаем конкретного коллегу admin
-        Editor editor = new Editor();// создаем конкретного коллегу editor
-        new ConcreteMediator(admin, editor);
+        Map map = new Map();// создаем объект, состояние которого нужно сохранить
+        Caretaker caretaker = new Caretaker();// создаем объект, который сохранит объект-хранитель
 
-        System.out.println("\nAdmin send message: Hello");
-        admin.send("Hello I'm admin");// admin отправляет сообщение посреднику
-        System.out.println("\nEditor send message: Hello");
-        editor.send("Hello I'm editor"); // editor отправляет сообщение посреднику
+        System.out.println("Creating new Map...");
+        map.setNameAndDate("My Map");// устанавливаем имя карте
+        System.out.println(map);// выводим состояние карты
+
+        System.out.println("Saving current state...");
+        /* создаем бэкап, вызывая метод setBackup() объекта caretaker, который принимает в качестве аргумента объект Snapshot, который в свою очередь получаем из метода createSnapshot() нашего объекта Map. */
+        caretaker.setBackup(map.createSnapshot());
+
+        System.out.println("Updating name of Map...");
+        map.setNameAndDate("My checked Map");// устанавливаем новое имя нашему объекту Map
+        System.out.println(map);// выводим toString()
+
+        System.out.println("Rolling back to oldest Name...");
+        map.loadSnapshot(caretaker.getBackup());// совершаем откат до предыдущего состояния
+        System.out.println(map);// выводим результат
     }
 }
 
-interface Mediator {
-    void sendMessage(String message, Collegue collegue);
-}
-
-class ConcreteMediator implements Mediator {
-    private Admin admin;// ссылка на объект класса Admin
-    private Editor editor;// Ссылка на объект класса Editor
-
-    public ConcreteMediator(Admin admin, Editor editor) {
-        this.admin = admin;
-        this.editor = editor;
-        editor.setMediator(this);
-        admin.setMediator(this);
+//Класс карты. Соответствует на схеме Originator-у. Его состояние будем сохранять.
+class Map{
+    //Внутреннее состояние объекта, которое нужно сохранить
+    private String name;
+    private Date date;
+    // конструктор не создаем, будем использовать по умолчанию
+    // метод setNameAndDate() устанавливает имя из аргумента, а дату создает текущую
+    public void setNameAndDate(String name) {
+        this.name = name;
+        this.date = new Date();
     }
 
-    @Override
-    public void sendMessage(String message, Collegue sender) {
-        if (sender.equals(admin)) {// если сообщение отправляет admin, оно отправляется объекту editor
-            editor.getMessage(message);
-        } else if (sender.equals(editor)) {// если сообщение отправляет editor, оно отправляется объекту admin
-            admin.getMessage(message);
-        }
+    @Override // toString переопределяем для наглядности
+    public String toString() {
+        return "Map" +
+                "\nname=" + name +
+                "\ndate=" + date + "\n";
     }
-}
-
-abstract class Collegue {
-    private Mediator mediator;// ссылка на посредника
-
-    public void setMediator(Mediator mediator) {
-        this.mediator = mediator;
+    // создает снимок состояния объекта Map (создает резервную копию)
+    public Snapshot createSnapshot(){
+        return new Snapshot(name);
     }
-
-    void send(String message) {
-        mediator.sendMessage(message, this);
-    }
-
-    abstract void getMessage(String message);// метод получения сообщения для наглядности работы примера
-}
-
-class Admin extends Collegue {
-    @Override
-    void getMessage(String message) {
-        System.out.println("Admin get message: " + message);
+    // восстанавливает прежнее состояние Map из резервной копии
+    public void loadSnapshot(Snapshot snapshot){
+        this.name = snapshot.getName();
+        this.date = snapshot.getDate();
     }
 }
-
-class Editor extends Collegue {
-    @Override
-    void getMessage(String message) {
-        System.out.println("Editor get message: " + message);
+// класс-хранитель состояния нашей карты, содержит поля, аналогичные классу Map
+class Snapshot{
+    private final String name;
+    private final Date date;
+    // конструктор принимает name в качестве аргумента, дату устанавливает текущую
+    public Snapshot(String name) {
+        this.name = name;
+        this.date = new Date();
+    }
+    // геттеры имени и даты
+    public String getName() {
+        return name;
+    }
+    public Date getDate() {
+        return date;
+    }
+}
+// отвечает за сохранение объекта-хранителя, содержит ссылку на Snapshot. Отвечает за откат к прежнему состоянию.
+class Caretaker {
+    Snapshot backup;
+    // возвращает сохраненный объект класса-хранителя
+    public Snapshot getBackup() {
+        return backup;
+    }
+    // сохраняет объект класса хранителя
+    public void setBackup(Snapshot backup) {
+        this.backup = backup;
     }
 }

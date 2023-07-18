@@ -1,51 +1,65 @@
-// клиент для проверки кода
-class IteratorMain {
+class MainMediator {
     public static void main(String[] args) {
-        ConcreteAggregate ca = new ConcreteAggregate();// Создаем коллекцию
-        Iterator iterator = ca.getIterator();
-        while (iterator.hasNext()){// пока в коллекции есть следующие элементы...
-            System.out.println(iterator.next());//выводим их на экран, используя метод next() итератора
+        Admin admin = new Admin();// создаем конкретного коллегу admin
+        Editor editor = new Editor();// создаем конкретного коллегу editor
+        new ConcreteMediator(admin, editor);
+
+        System.out.println("\nAdmin send message: Hello");
+        admin.send("Hello I'm admin");// admin отправляет сообщение посреднику
+        System.out.println("\nEditor send message: Hello");
+        editor.send("Hello I'm editor"); // editor отправляет сообщение посреднику
+    }
+}
+
+interface Mediator {
+    void sendMessage(String message, Collegue collegue);
+}
+
+class ConcreteMediator implements Mediator {
+    private Admin admin;// ссылка на объект класса Admin
+    private Editor editor;// Ссылка на объект класса Editor
+
+    public ConcreteMediator(Admin admin, Editor editor) {
+        this.admin = admin;
+        this.editor = editor;
+        editor.setMediator(this);
+        admin.setMediator(this);
+    }
+
+    @Override
+    public void sendMessage(String message, Collegue sender) {
+        if (sender.equals(admin)) {// если сообщение отправляет admin, оно отправляется объекту editor
+            editor.getMessage(message);
+        } else if (sender.equals(editor)) {// если сообщение отправляет editor, оно отправляется объекту admin
+            admin.getMessage(message);
         }
     }
 }
 
-class ConcreteAggregate implements Aggregate{
-    private String[] patterns = {"Singleton", "Factory", "Interpreter", "Decorator", "Facade", "Prototype"};
+abstract class Collegue {
+    private Mediator mediator;// ссылка на посредника
 
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    void send(String message) {
+        mediator.sendMessage(message, this);
+    }
+
+    abstract void getMessage(String message);// метод получения сообщения для наглядности работы примера
+}
+
+class Admin extends Collegue {
     @Override
-    public Iterator getIterator() {// переопределяем метод getIterator() интерфейса Aggregate
-        return new PatternsIterator(patterns);// вызываем конструктор итератора и передаем ссылку на массив
+    void getMessage(String message) {
+        System.out.println("Admin get message: " + message);
     }
 }
 
-interface Iterator{
-    boolean hasNext();// вернет true, если в массиве есть не пройденные элементы
-    Object next();// возвращает следующий элемент
-}
-
-class PatternsIterator implements Iterator{// переопределяем методы интерфейса
-    private final String[] patterns;// Ссылка на массив паттернов
-    int index = 0;// Переменная index соответствует индексу элемента в массиве.
-
-    PatternsIterator(String[] patterns) {
-        this.patterns = patterns;
-    }
-
+class Editor extends Collegue {
     @Override
-    public boolean hasNext() {
-        if (index < patterns.length){
-            return true;// если index меньше длины массива - возвращает true
-        }  else {
-            return false;// иначе возвращает false, т.е. коллекция закончилась
-        }
+    void getMessage(String message) {
+        System.out.println("Editor get message: " + message);
     }
-
-    @Override
-    public Object next() {
-        return patterns[index++];// возвращаем следующий элемент коллекции, после чего инкрементируем index
-    }
-}
-
-interface Aggregate{// описывает метод, который возвращает нам конкретный итератор
-    Iterator getIterator();
 }

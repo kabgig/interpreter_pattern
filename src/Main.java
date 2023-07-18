@@ -1,75 +1,55 @@
-import java.util.ArrayList;
-import java.util.List;
-
-class ObserverRunner {
+// Клиентский класс
+class StateRunner {
     public static void main(String[] args) {
-        NewsSite newsSite = new NewsSite();// создаем сайт новостей
-        NewsListener listenerOne = new NewsListener("firstListener");//создаем подписчика
-        NewsListener listenerTwo = new NewsListener("secondListener");//создаем подписчика
-        newsSite.addObserver(listenerOne);//добавляем подписчика в список
-        newsSite.addObserver(listenerTwo);//добавляем подписчика в список
-        //добавляем две новости
-        newsSite.addNews("First news");
-        newsSite.addNews("Second news");
-        //удаляем новость
-        newsSite.removeNews("First news");
+        Article article = new Article();// Создаем новую статью.
+        article.publish(); //вызываем метод опубликовать
+        article.publish(); //вызываем метод опубликовать
+        article.publish(); //вызываем метод опубликовать
     }
 }
-// Интерфейс издателя
-interface Observable{
-    void addObserver(Observer observer);// Метод подписки на событие, в качестве аргумента принимает конкретного подписчика (слушателя) события.
-    void removeObserver(Observer observer);// Метод отписки от события, в качестве аргумента принимает конкретного подписчика (слушателя) события.
-    void notifyObserver();// метод оповещения всех подписчиков
-}
-// Интерфейс подписчика
-interface Observer{
-    // метод обработки события издателя
-    void handleEvent(List<String> news);// в качестве аргумента принимает список строк news
+// Общий интерфейс всех состояний статьи
+interface State{
+    //Метод, который будет изменять состояние статьи (контекста) в зависимости от текущего состояния. В качестве аргумента принимает объект класса Article.
+    void changeState(Article article);
 }
 
-//Класс конкретного издателя. Реализует интерфейс Observable, хранит список всех подписчиков.
-class NewsSite implements Observable{
-    private List<Observer> listeners = new ArrayList<>();// Список всех подписчиков.
-    private List<String> news = new ArrayList<>();// Список новостей, об изменении которого будут оповещаться подписчики.
-    // Переопределяем методы подписки, отписки и извещения подписчиков.
+// Состояние Черновик
+class Draft implements State{
     @Override
-    public void addObserver(Observer observer) {
-        listeners.add(observer);
-    }// добавляет конкретного подписчика в список
-
-    @Override
-    public void removeObserver(Observer observer) {
-        listeners.remove(observer);
-    }// удаляет конкретного подписчика из списка
-
-    @Override
-    public void notifyObserver() {
-        // оповещает каждого конкретного подписчика из списка о событии, используя цикл forEach
-        for (Observer observer : listeners){
-            observer.handleEvent(news);
-        }
-    }
-    // добавляем новость в список news
-    public void addNews(String news){
-        this.news.add(news);// добавляем непосредственно новость
-        this.notifyObserver();// извещаем всех подписчиков конкретного издателя
-    }
-    // удаляем новость из списка
-    public void removeNews(String news){
-        this.news.remove(news);// удаляем новость
-        this.notifyObserver();// извещаем подписчиков
+    public void changeState(Article article) {
+        article.setState(new Moderation());// Устанавливает статью в состояние Модерация.
+        System.out.println("Draft State: Article waiting for moderation...");
     }
 }
-// Конкретный класс подписчика. Реализует интерфейс Observer.
-class NewsListener implements Observer{
-    private String name;// имя подписчика для наглядности
-    public NewsListener(String name) {
-        this.name = name;
-    }// конструктор подписчика
-    // переопределяем метод обработки подписчиком события
+// Состояние Модерация
+class Moderation implements State{
     @Override
-    public void handleEvent(List<String> news) {
-        System.out.println("I'm " + name + " I get news");
-        System.out.println(news);// выводим новости
+    public void changeState(Article article) {
+        article.setState(new Publication());// Устанавливает статью в состояние Публикация.
+        System.out.println("Moderation State: Publishing Article...");
+    }
+}
+// Состояние Публикация
+class Publication implements State{
+    @Override
+    public void changeState(Article article) {// Не изменяет состояние статьи после публикации.
+        System.out.println("Publication State: Nothing happens...");
+    }
+}
+// Класс статьи. Является контекстом состояния. Содержит ссылку на объект состояния.
+class Article{
+    private State state;// Ссылка на объект конкретного состояния
+    // Сеттер состояния
+    public void setState(State state) {
+        this.state = state;
+    }
+    // конструктор статьи
+    public Article(){
+        this.state = new Draft();// При создании статьи устанавливает состояние в Черновик.
+        System.out.println("Create Article...");// Сообщение о создании статьи для наглядности.
+    }
+    // Метод "опубликовать" в зависимости от текущего состояния статьи будет выполнять разный функционал.
+    public void publish() {
+        state.changeState(this);// В качестве аргумента принимает объект статьи.
     }
 }

@@ -1,79 +1,75 @@
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
-class Memento {
+class ObserverRunner {
     public static void main(String[] args) {
-        Map map = new Map();// создаем объект, состояние которого нужно сохранить
-        Caretaker caretaker = new Caretaker();// создаем объект, который сохранит объект-хранитель
-
-        System.out.println("Creating new Map...");
-        map.setNameAndDate("My Map");// устанавливаем имя карте
-        System.out.println(map);// выводим состояние карты
-
-        System.out.println("Saving current state...");
-        /* создаем бэкап, вызывая метод setBackup() объекта caretaker, который принимает в качестве аргумента объект Snapshot, который в свою очередь получаем из метода createSnapshot() нашего объекта Map. */
-        caretaker.setBackup(map.createSnapshot());
-
-        System.out.println("Updating name of Map...");
-        map.setNameAndDate("My checked Map");// устанавливаем новое имя нашему объекту Map
-        System.out.println(map);// выводим toString()
-
-        System.out.println("Rolling back to oldest Name...");
-        map.loadSnapshot(caretaker.getBackup());// совершаем откат до предыдущего состояния
-        System.out.println(map);// выводим результат
+        NewsSite newsSite = new NewsSite();// создаем сайт новостей
+        NewsListener listenerOne = new NewsListener("firstListener");//создаем подписчика
+        NewsListener listenerTwo = new NewsListener("secondListener");//создаем подписчика
+        newsSite.addObserver(listenerOne);//добавляем подписчика в список
+        newsSite.addObserver(listenerTwo);//добавляем подписчика в список
+        //добавляем две новости
+        newsSite.addNews("First news");
+        newsSite.addNews("Second news");
+        //удаляем новость
+        newsSite.removeNews("First news");
     }
 }
+// Интерфейс издателя
+interface Observable{
+    void addObserver(Observer observer);// Метод подписки на событие, в качестве аргумента принимает конкретного подписчика (слушателя) события.
+    void removeObserver(Observer observer);// Метод отписки от события, в качестве аргумента принимает конкретного подписчика (слушателя) события.
+    void notifyObserver();// метод оповещения всех подписчиков
+}
+// Интерфейс подписчика
+interface Observer{
+    // метод обработки события издателя
+    void handleEvent(List<String> news);// в качестве аргумента принимает список строк news
+}
 
-class Map{
-    private String name;
-    private Date date;
-
-    public void setNameAndDate(String name) {
-        this.name = name;
-        this.date = new Date();
-    }
+//Класс конкретного издателя. Реализует интерфейс Observable, хранит список всех подписчиков.
+class NewsSite implements Observable{
+    private List<Observer> listeners = new ArrayList<>();// Список всех подписчиков.
+    private List<String> news = new ArrayList<>();// Список новостей, об изменении которого будут оповещаться подписчики.
+    // Переопределяем методы подписки, отписки и извещения подписчиков.
+    @Override
+    public void addObserver(Observer observer) {
+        listeners.add(observer);
+    }// добавляет конкретного подписчика в список
 
     @Override
-    public String toString() {
-        return "Map" +
-                "\nname=" + name +
-                "\ndate=" + date + "\n";
-    }
+    public void removeObserver(Observer observer) {
+        listeners.remove(observer);
+    }// удаляет конкретного подписчика из списка
 
-    public Snapshot createSnapshot(){
-        return new Snapshot(name);
+    @Override
+    public void notifyObserver() {
+        // оповещает каждого конкретного подписчика из списка о событии, используя цикл forEach
+        for (Observer observer : listeners){
+            observer.handleEvent(news);
+        }
     }
-
-    public void loadSnapshot(Snapshot snapshot){
-        this.name = snapshot.getName();
-        this.date = snapshot.getDate();
+    // добавляем новость в список news
+    public void addNews(String news){
+        this.news.add(news);// добавляем непосредственно новость
+        this.notifyObserver();// извещаем всех подписчиков конкретного издателя
+    }
+    // удаляем новость из списка
+    public void removeNews(String news){
+        this.news.remove(news);// удаляем новость
+        this.notifyObserver();// извещаем подписчиков
     }
 }
-
-class Snapshot{
-    private final String name;
-    private final Date date;
-
-    public Snapshot(String name) {
+// Конкретный класс подписчика. Реализует интерфейс Observer.
+class NewsListener implements Observer{
+    private String name;// имя подписчика для наглядности
+    public NewsListener(String name) {
         this.name = name;
-        this.date = new Date();
-    }
-
-    public String getName() {
-        return name;
-    }
-    public Date getDate() {
-        return date;
-    }
-}
-
-class Caretaker {
-    Snapshot backup;
-
-    public Snapshot getBackup() {
-        return backup;
-    }
-
-    public void setBackup(Snapshot backup) {
-        this.backup = backup;
+    }// конструктор подписчика
+    // переопределяем метод обработки подписчиком события
+    @Override
+    public void handleEvent(List<String> news) {
+        System.out.println("I'm " + name + " I get news");
+        System.out.println(news);// выводим новости
     }
 }
